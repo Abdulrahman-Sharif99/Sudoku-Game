@@ -46,10 +46,18 @@ public class Gui extends JFrame {
                     cell.addActionListener(e -> checkInput(r, c));
                 }
 
+                int top = (row % SUBGRID_SIZE == 0) ? 4 : 1;
+                int left = (col % SUBGRID_SIZE == 0) ? 4 : 1;
+                int bottom = (row == GRID_SIZE - 1) ? 4 : 1;
+                int right = (col == GRID_SIZE - 1) ? 4 : 1;
+
+                cell.setBorder(BorderFactory.createMatteBorder(top, left, bottom, right, Color.BLACK));
+
                 cells[row][col] = cell;
                 boardPanel.add(cell);
             }
         }
+
 
         livesLabel = new JLabel("Lives: 3");
         livesLabel.setFont(new Font("Arial", Font.BOLD, 16));
