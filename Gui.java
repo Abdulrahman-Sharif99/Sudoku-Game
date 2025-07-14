@@ -13,14 +13,15 @@ public class Gui extends JFrame {
     private JTextField[][] cells = new JTextField[GRID_SIZE][GRID_SIZE];
     private JLabel livesLabel;
 
+    private JTextField selectedCell = null; 
+
     public Gui() {
         setTitle("Sudoku Game");
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         setLayout(new BorderLayout());
 
-        puzzle = SudokuGenerator.generatePuzzleBoard(40); // Remove 40 cells (medium difficulty)
+        puzzle = SudokuGenerator.generatePuzzleBoard(40);
 
-        // Create a solved version for validation
         solution = new int[GRID_SIZE][GRID_SIZE];
         copyBoard(puzzle, solution);
         SudokuGenerator.generateFullBoard(solution);
@@ -39,11 +40,27 @@ public class Gui extends JFrame {
                 if (puzzle[row][col] != 0) {
                     cell.setText(String.valueOf(puzzle[row][col]));
                     cell.setEditable(false);
-                    cell.setBackground(Color.LIGHT_GRAY);
+                    cell.addMouseListener(new MouseAdapter() {
+                        public void mouseClicked(MouseEvent e) {
+                            if (selectedCell != null) {
+                                selectedCell.setBackground(Color.WHITE);
+                            }
+                            selectedCell = cell;
+                            cell.setBackground(Color.LIGHT_GRAY);
+                        }
+                    });
                 } else {
-                    cell.setText("");
+                    cell.setEditable(true);
                     final int r = row, c = col;
-                    cell.addActionListener(e -> checkInput(r, c));
+                    cell.addMouseListener(new MouseAdapter() {
+                        public void mouseClicked(MouseEvent e) {
+                            if (selectedCell != null) {
+                                selectedCell.setBackground(Color.WHITE);
+                            }
+                            selectedCell = cell;
+                            cell.setBackground(Color.LIGHT_GRAY);
+                        }
+                    });
                 }
 
                 int top = (row % SUBGRID_SIZE == 0) ? 4 : 1;
@@ -58,62 +75,88 @@ public class Gui extends JFrame {
             }
         }
 
+        JPanel buttonPanel = new JPanel(new GridLayout(5, 2, 5, 5));
+        for (int i = 1; i <= 9; i++) {
+            int number = i;
+            JButton btn = new JButton(String.valueOf(i));
+            btn.setFont(new Font("Arial", Font.BOLD, 18));
+            btn.addActionListener(e -> handleNumberButton(number));
+            buttonPanel.add(btn);
+        }
+
+        JButton clearBtn = new JButton("Clear");
+        clearBtn.setFont(new Font("Arial", Font.BOLD, 14));
+        clearBtn.addActionListener(e -> clearSelectedCell());
+        buttonPanel.add(clearBtn);
 
         livesLabel = new JLabel("Lives: 3");
         livesLabel.setFont(new Font("Arial", Font.BOLD, 16));
         livesLabel.setHorizontalAlignment(SwingConstants.CENTER);
 
-        add(boardPanel, BorderLayout.CENTER);
-        add(livesLabel, BorderLayout.SOUTH);
+        JPanel rightPanel = new JPanel(new BorderLayout(10, 10));
+        rightPanel.add(buttonPanel, BorderLayout.CENTER);
+        rightPanel.add(livesLabel, BorderLayout.SOUTH);
+        rightPanel.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
 
-        setSize(GRID_SIZE * CELL_SIZE, GRID_SIZE * CELL_SIZE + 50);
+        add(boardPanel, BorderLayout.CENTER);
+        add(rightPanel, BorderLayout.EAST);
+
+        setSize(700, 550);
         setLocationRelativeTo(null);
         setVisible(true);
     }
 
-    private void checkInput(int row, int col) {
-        String text = cells[row][col].getText();
-        if (text.isEmpty()) return;
+    private void handleNumberButton(int number) {
+        if (selectedCell == null) return;
 
-        try {
-            int number = Integer.parseInt(text);
-
-            if (number < 1 || number > 9) {
-                showError(row, col, "Invalid number. Enter 1-9.");
-                return;
-            }
-
-            // Check against solution
-            if (number == solution[row][col]) {
-                cells[row][col].setForeground(Color.BLUE);
-                cells[row][col].setEditable(false);
-            } else {
-                lives--;
-                livesLabel.setText("Lives: " + lives);
-                showError(row, col, "Incorrect!");
-
-                if (lives == 0) {
-                    JOptionPane.showMessageDialog(this, "Game Over! You lost all your lives.", "Game Over", JOptionPane.ERROR_MESSAGE);
-                    disableAllCells();
+        int row = -1, col = -1;
+        for (int r = 0; r < GRID_SIZE; r++) {
+            for (int c = 0; c < GRID_SIZE; c++) {
+                if (cells[r][c] == selectedCell) {
+                    row = r;
+                    col = c;
+                    break;
                 }
             }
-        } catch (NumberFormatException ex) {
-            showError(row, col, "Please enter a number.");
+        }
+        if (row == -1 || col == -1) return;
+
+        // Check if correct
+        if (number == solution[row][col]) {
+            selectedCell.setText(String.valueOf(number));
+            selectedCell.setForeground(Color.BLUE);
+            selectedCell.setEditable(false);
+            selectedCell.setBackground(Color.WHITE);
+            selectedCell = null;
+        } else {
+            lives--;
+            livesLabel.setText("Lives: " + lives);
+            JOptionPane.showMessageDialog(this, "Incorrect!", "Error", JOptionPane.WARNING_MESSAGE);
+            if (lives == 0) {
+                int option = JOptionPane.showOptionDialog(
+                    this,
+                    "Game Over! You lost all your lives.\nWould you like to start a new game or exit?",
+                    "Game Over",
+                    JOptionPane.YES_NO_OPTION,
+                    JOptionPane.ERROR_MESSAGE,
+                    null,
+                    new String[]{"New Game", "Exit"},
+                    "New Game"
+                );
+
+                if (option == JOptionPane.YES_OPTION) {
+                    this.dispose();
+                    SwingUtilities.invokeLater(Gui::new); 
+                } else {
+                    System.exit(0);
+                }
+            }
         }
     }
 
-    private void showError(int row, int col, String message) {
-        cells[row][col].setText("");
-        cells[row][col].setBackground(Color.PINK);
-        JOptionPane.showMessageDialog(this, message, "Error", JOptionPane.WARNING_MESSAGE);
-        cells[row][col].setBackground(Color.WHITE);
-    }
-
-    private void disableAllCells() {
-        for (int row = 0; row < GRID_SIZE; row++) {
-            for (int col = 0; col < GRID_SIZE; col++) {
-                cells[row][col].setEditable(false);
-            }
+    private void clearSelectedCell() {
+        if (selectedCell != null && selectedCell.isEditable()) {
+            selectedCell.setText("");
         }
     }
 
@@ -127,3 +170,4 @@ public class Gui extends JFrame {
         SwingUtilities.invokeLater(Gui::new);
     }
 }
+
