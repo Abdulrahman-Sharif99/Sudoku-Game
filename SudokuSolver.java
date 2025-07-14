@@ -1,6 +1,5 @@
 public class SudokuSolver {
 
-    private int[][] board;
     private static int Grid_Size = 9;
 
     private static boolean isNumberInRow(int[][] board, int number, int row){
@@ -42,6 +41,6 @@ public class SudokuSolver {
     }
 
     public static int[][] getBoard(int [][] board){
-        this.board = board;
+        return board;
     }
 }

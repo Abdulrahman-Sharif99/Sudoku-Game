@@ -16,7 +16,7 @@ public class SudokuGenerator {
         return board;
     }
 
-    private static boolean generateFullBoard(int[][] board) {
+    public static boolean generateFullBoard(int[][] board) {
         for (int row = 0; row < GRID_SIZE; row++) {
             for (int col = 0; col < GRID_SIZE; col++) {
                 if (board[row][col] == 0) {
@@ -29,14 +29,14 @@ public class SudokuGenerator {
                                 return true;
                             }
 
-                            board[row][col] = 0; // backtrack
+                            board[row][col] = 0; 
                         }
                     }
                     return false; // no valid number found
                 }
             }
         }
-        return true; // board fully filled
+        return true; 
     }
 
     private static List<Integer> getShuffledNumbers() {
