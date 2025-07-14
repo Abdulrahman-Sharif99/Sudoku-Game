@@ -5,7 +5,6 @@ import java.awt.event.*;
 public class Gui extends JFrame {
     private static final int GRID_SIZE = 9;
     private static final int SUBGRID_SIZE = 3;
-    private static final int CELL_SIZE = 50;
 
     private int lives = 3;
     private int[][] puzzle;
@@ -13,7 +12,7 @@ public class Gui extends JFrame {
     private JTextField[][] cells = new JTextField[GRID_SIZE][GRID_SIZE];
     private JLabel livesLabel;
 
-    private JTextField selectedCell = null; 
+    private JTextField selectedCell = null;
 
     public Gui() {
         setTitle("Sudoku Game");
@@ -40,25 +39,68 @@ public class Gui extends JFrame {
                 if (puzzle[row][col] != 0) {
                     cell.setText(String.valueOf(puzzle[row][col]));
                     cell.setEditable(false);
-                    cell.addMouseListener(new MouseAdapter() {
-                        public void mouseClicked(MouseEvent e) {
-                            if (selectedCell != null) {
-                                selectedCell.setBackground(Color.WHITE);
-                            }
-                            selectedCell = cell;
-                            cell.setBackground(Color.LIGHT_GRAY);
-                        }
-                    });
                 } else {
                     cell.setEditable(true);
+
                     final int r = row, c = col;
+
                     cell.addMouseListener(new MouseAdapter() {
+                        @Override
                         public void mouseClicked(MouseEvent e) {
                             if (selectedCell != null) {
                                 selectedCell.setBackground(Color.WHITE);
                             }
                             selectedCell = cell;
+                            highlightArea(r, c);
                             cell.setBackground(Color.LIGHT_GRAY);
+                            cell.requestFocus();
+                        }
+                    });
+
+                    cell.addKeyListener(new KeyAdapter() {
+                        @Override
+                        public void keyTyped(KeyEvent e) {
+                            char ch = e.getKeyChar();
+                            if (ch < '1' || ch > '9') {
+                                e.consume();
+                                return;
+                            }
+
+                            int inputNum = Character.getNumericValue(ch);
+
+                            if (inputNum == solution[r][c]) {
+                                cell.setText(String.valueOf(inputNum));
+                                cell.setForeground(Color.BLUE);
+                                cell.setEditable(false);
+                                cell.setBackground(Color.WHITE);
+                                selectedCell = null;
+                            } else {
+                                lives--;
+                                livesLabel.setText("Lives: " + lives);
+                                JOptionPane.showMessageDialog(Gui.this, "Incorrect!", "Error", JOptionPane.WARNING_MESSAGE);
+                                cell.setText("");
+
+                                if (lives == 0) {
+                                    int option = JOptionPane.showOptionDialog(
+                                        Gui.this,
+                                        "Game Over! You lost all your lives.\nWould you like to start a new game or exit?",
+                                        "Game Over",
+                                        JOptionPane.YES_NO_OPTION,
+                                        JOptionPane.ERROR_MESSAGE,
+                                        null,
+                                        new String[]{"New Game", "Exit"},
+                                        "New Game"
+                                    );
+
+                                    if (option == JOptionPane.YES_OPTION) {
+                                        dispose();
+                                        SwingUtilities.invokeLater(Gui::new);
+                                    } else {
+                                        System.exit(0);
+                                    }
+                                }
+                            }
+                            e.consume();
                         }
                     });
                 }
@@ -89,7 +131,7 @@ public class Gui extends JFrame {
         clearBtn.addActionListener(e -> clearSelectedCell());
         buttonPanel.add(clearBtn);
 
-        livesLabel = new JLabel("Lives: 3");
+        livesLabel = new JLabel("Lives: " + lives);
         livesLabel.setFont(new Font("Arial", Font.BOLD, 16));
         livesLabel.setHorizontalAlignment(SwingConstants.CENTER);
 
@@ -107,7 +149,7 @@ public class Gui extends JFrame {
     }
 
     private void handleNumberButton(int number) {
-        if (selectedCell == null) return;
+        if (selectedCell == null || !selectedCell.isEditable()) return;
 
         int row = -1, col = -1;
         for (int r = 0; r < GRID_SIZE; r++) {
@@ -121,7 +163,6 @@ public class Gui extends JFrame {
         }
         if (row == -1 || col == -1) return;
 
-        // Check if correct
         if (number == solution[row][col]) {
             selectedCell.setText(String.valueOf(number));
             selectedCell.setForeground(Color.BLUE);
@@ -132,6 +173,8 @@ public class Gui extends JFrame {
             lives--;
             livesLabel.setText("Lives: " + lives);
             JOptionPane.showMessageDialog(this, "Incorrect!", "Error", JOptionPane.WARNING_MESSAGE);
+            selectedCell.setText("");
+
             if (lives == 0) {
                 int option = JOptionPane.showOptionDialog(
                     this,
@@ -146,7 +189,7 @@ public class Gui extends JFrame {
 
                 if (option == JOptionPane.YES_OPTION) {
                     this.dispose();
-                    SwingUtilities.invokeLater(Gui::new); 
+                    SwingUtilities.invokeLater(Gui::new);
                 } else {
                     System.exit(0);
                 }
@@ -166,8 +209,33 @@ public class Gui extends JFrame {
         }
     }
 
+    private void resetHighlights() {
+        for (int r = 0; r < GRID_SIZE; r++) {
+            for (int c = 0; c < GRID_SIZE; c++) {
+                cells[r][c].setBackground(Color.WHITE);
+            }
+        }
+    }
+    
+    private void highlightArea(int row, int col) {
+        resetHighlights();
+
+        for (int i = 0; i < GRID_SIZE; i++) {
+            cells[row][i].setBackground(Color.LIGHT_GRAY);
+        }
+
+        int startRow = (row / SUBGRID_SIZE) * SUBGRID_SIZE;
+        int startCol = (col / SUBGRID_SIZE) * SUBGRID_SIZE;
+        for (int r = startRow; r < startRow + SUBGRID_SIZE; r++) {
+            for (int c = startCol; c < startCol + SUBGRID_SIZE; c++) {
+                cells[r][c].setBackground(Color.LIGHT_GRAY);
+            }
+        }
+
+        cells[row][col].setBackground(Color.LIGHT_GRAY);
+    }
+
     public static void main(String[] args) {
         SwingUtilities.invokeLater(Gui::new);
     }
 }
-
