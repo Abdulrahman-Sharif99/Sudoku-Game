@@ -6,7 +6,12 @@ import java.util.Random;
 public class SudokuGenerator {
     public static final int GRID_SIZE = 9;
 
-    public static int[][] generatePuzzleBoard(int cellsToRemove) {
+    public enum Difficulty {
+        EASY, MEDIUM, HARD
+    }
+
+    public static int[][] generatePuzzleBoard(Difficulty difficulty) {
+        int cellsToRemove = getCellsToRemove(difficulty);
         int[][] board = new int[GRID_SIZE][GRID_SIZE];
 
         generateFullBoard(board);
@@ -32,7 +37,7 @@ public class SudokuGenerator {
                             board[row][col] = 0; 
                         }
                     }
-                    return false; // no valid number found
+                    return false;
                 }
             }
         }
@@ -60,4 +65,18 @@ public class SudokuGenerator {
             }
         }
     }
+
+    private static int getCellsToRemove(Difficulty difficulty) {
+        switch (difficulty) {
+            case EASY:
+                return 30; 
+            case MEDIUM:
+                return 40;
+            case HARD:
+                return 50; 
+            default:
+                return 40; 
+        }
+    }
 }
+

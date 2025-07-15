@@ -14,18 +14,53 @@ public class Gui extends JFrame {
 
     private JTextField selectedCell = null;
 
+    private JPanel boardPanel;
+    private JPanel buttonPanel;
+    private JPanel difficultyPanel;
+
     public Gui() {
         setTitle("Sudoku Game");
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         setLayout(new BorderLayout());
 
-        puzzle = SudokuGenerator.generatePuzzleBoard(40);
+        // Difficulty buttons panel
+        difficultyPanel = new JPanel(new GridLayout(1, 3, 10, 10));
+        JButton easyBtn = new JButton("Easy");
+        JButton mediumBtn = new JButton("Medium");
+        JButton hardBtn = new JButton("Hard");
 
+        difficultyPanel.add(easyBtn);
+        difficultyPanel.add(mediumBtn);
+        difficultyPanel.add(hardBtn);
+
+        easyBtn.addActionListener(e -> startGame(SudokuGenerator.Difficulty.EASY));
+        mediumBtn.addActionListener(e -> startGame(SudokuGenerator.Difficulty.MEDIUM));
+        hardBtn.addActionListener(e -> startGame(SudokuGenerator.Difficulty.HARD));
+
+        add(difficultyPanel, BorderLayout.NORTH);
+
+        setSize(700, 550);
+        setLocationRelativeTo(null);
+        setVisible(true);
+    }
+
+    private void startGame(SudokuGenerator.Difficulty difficulty) {
+        lives = 3;
+
+        puzzle = SudokuGenerator.generatePuzzleBoard(difficulty);
         solution = new int[GRID_SIZE][GRID_SIZE];
         copyBoard(puzzle, solution);
         SudokuGenerator.generateFullBoard(solution);
 
-        JPanel boardPanel = new JPanel(new GridLayout(GRID_SIZE, GRID_SIZE));
+        if (boardPanel != null) {
+            remove(boardPanel);
+        }
+        if (buttonPanel != null) {
+            remove(buttonPanel);
+        }
+
+        // Create Sudoku board
+        boardPanel = new JPanel(new GridLayout(GRID_SIZE, GRID_SIZE));
         boardPanel.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
 
         Font font = new Font("Monospaced", Font.BOLD, 20);
@@ -41,7 +76,6 @@ public class Gui extends JFrame {
                     cell.setEditable(false);
                 } else {
                     cell.setEditable(true);
-
                     final int r = row, c = col;
 
                     cell.addMouseListener(new MouseAdapter() {
@@ -65,9 +99,7 @@ public class Gui extends JFrame {
                                 e.consume();
                                 return;
                             }
-
                             int inputNum = Character.getNumericValue(ch);
-
                             if (inputNum == solution[r][c]) {
                                 cell.setText(String.valueOf(inputNum));
                                 cell.setForeground(Color.BLUE);
@@ -82,14 +114,14 @@ public class Gui extends JFrame {
 
                                 if (lives == 0) {
                                     int option = JOptionPane.showOptionDialog(
-                                        Gui.this,
-                                        "Game Over! You lost all your lives.\nWould you like to start a new game or exit?",
-                                        "Game Over",
-                                        JOptionPane.YES_NO_OPTION,
-                                        JOptionPane.ERROR_MESSAGE,
-                                        null,
-                                        new String[]{"New Game", "Exit"},
-                                        "New Game"
+                                            Gui.this,
+                                            "Game Over! You lost all your lives.\nWould you like to start a new game or exit?",
+                                            "Game Over",
+                                            JOptionPane.YES_NO_OPTION,
+                                            JOptionPane.ERROR_MESSAGE,
+                                            null,
+                                            new String[]{"New Game", "Exit"},
+                                            "New Game"
                                     );
 
                                     if (option == JOptionPane.YES_OPTION) {
@@ -117,7 +149,8 @@ public class Gui extends JFrame {
             }
         }
 
-        JPanel buttonPanel = new JPanel(new GridLayout(5, 2, 5, 5));
+        // Number button panel
+        buttonPanel = new JPanel(new GridLayout(5, 2, 5, 5));
         for (int i = 1; i <= 9; i++) {
             int number = i;
             JButton btn = new JButton(String.valueOf(i));
@@ -143,9 +176,11 @@ public class Gui extends JFrame {
         add(boardPanel, BorderLayout.CENTER);
         add(rightPanel, BorderLayout.EAST);
 
-        setSize(700, 550);
-        setLocationRelativeTo(null);
-        setVisible(true);
+        // Hide difficulty buttons
+        difficultyPanel.setVisible(false);
+
+        revalidate();
+        repaint();
     }
 
     private void handleNumberButton(int number) {
@@ -177,14 +212,14 @@ public class Gui extends JFrame {
 
             if (lives == 0) {
                 int option = JOptionPane.showOptionDialog(
-                    this,
-                    "Game Over! You lost all your lives.\nWould you like to start a new game or exit?",
-                    "Game Over",
-                    JOptionPane.YES_NO_OPTION,
-                    JOptionPane.ERROR_MESSAGE,
-                    null,
-                    new String[]{"New Game", "Exit"},
-                    "New Game"
+                        this,
+                        "Game Over! You lost all your lives.\nWould you like to start a new game or exit?",
+                        "Game Over",
+                        JOptionPane.YES_NO_OPTION,
+                        JOptionPane.ERROR_MESSAGE,
+                        null,
+                        new String[]{"New Game", "Exit"},
+                        "New Game"
                 );
 
                 if (option == JOptionPane.YES_OPTION) {
@@ -216,10 +251,9 @@ public class Gui extends JFrame {
             }
         }
     }
-    
+
     private void highlightArea(int row, int col) {
         resetHighlights();
-
         for (int i = 0; i < GRID_SIZE; i++) {
             cells[row][i].setBackground(Color.LIGHT_GRAY);
         }
