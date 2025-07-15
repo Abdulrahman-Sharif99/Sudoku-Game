@@ -265,6 +265,7 @@ public class Gui extends JFrame {
         resetHighlights();
         for (int i = 0; i < GRID_SIZE; i++) {
             cells[row][i].setBackground(Color.LIGHT_GRAY);
+            cells[i][col].setBackground(Color.LIGHT_GRAY);
         }
         int startRow = (row / SUBGRID_SIZE) * SUBGRID_SIZE;
         int startCol = (col / SUBGRID_SIZE) * SUBGRID_SIZE;
