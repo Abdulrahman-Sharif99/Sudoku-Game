@@ -14,8 +14,6 @@ public class Gui extends JFrame {
 
     private JTextField selectedCell = null;
 
-    private JPanel boardPanel;
-    private JPanel buttonPanel;
     private JPanel difficultyPanel;
 
     public Gui() {
@@ -23,21 +21,41 @@ public class Gui extends JFrame {
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         setLayout(new BorderLayout());
 
-        // Difficulty buttons panel
-        difficultyPanel = new JPanel(new GridLayout(1, 3, 10, 10));
+        difficultyPanel = new JPanel();
+        difficultyPanel.setLayout(new GridBagLayout()); 
+
+        JPanel buttonInnerPanel = new JPanel(new GridLayout(4, 1, 10, 10));
+
+        JLabel label = new JLabel("Select Difficulty:", SwingConstants.CENTER);
+        label.setFont(new Font("Arial", Font.BOLD, 14)); 
+        label.setPreferredSize(new Dimension(120, 40));
+
         JButton easyBtn = new JButton("Easy");
         JButton mediumBtn = new JButton("Medium");
         JButton hardBtn = new JButton("Hard");
 
-        difficultyPanel.add(easyBtn);
-        difficultyPanel.add(mediumBtn);
-        difficultyPanel.add(hardBtn);
+        Font btnFont = new Font("Arial", Font.BOLD, 20);
+        easyBtn.setFont(btnFont);
+        mediumBtn.setFont(btnFont);
+        hardBtn.setFont(btnFont);
+        easyBtn.setPreferredSize(new Dimension(120, 40));
+        mediumBtn.setPreferredSize(new Dimension(120, 40));
+        hardBtn.setPreferredSize(new Dimension(120, 40));
 
         easyBtn.addActionListener(e -> startGame(SudokuGenerator.Difficulty.EASY));
         mediumBtn.addActionListener(e -> startGame(SudokuGenerator.Difficulty.MEDIUM));
         hardBtn.addActionListener(e -> startGame(SudokuGenerator.Difficulty.HARD));
 
-        add(difficultyPanel, BorderLayout.NORTH);
+        buttonInnerPanel.add(label);
+        buttonInnerPanel.add(easyBtn);
+        buttonInnerPanel.add(mediumBtn);
+        buttonInnerPanel.add(hardBtn);
+
+        // Add to center
+        difficultyPanel.add(buttonInnerPanel);
+
+        add(difficultyPanel, BorderLayout.CENTER);
+
 
         setSize(700, 550);
         setLocationRelativeTo(null);
@@ -45,24 +63,20 @@ public class Gui extends JFrame {
     }
 
     private void startGame(SudokuGenerator.Difficulty difficulty) {
+        remove(difficultyPanel);
+
         lives = 3;
+        livesLabel = new JLabel("Lives: " + lives);
+        livesLabel.setFont(new Font("Arial", Font.BOLD, 16));
+        livesLabel.setHorizontalAlignment(SwingConstants.CENTER);
 
         puzzle = SudokuGenerator.generatePuzzleBoard(difficulty);
         solution = new int[GRID_SIZE][GRID_SIZE];
         copyBoard(puzzle, solution);
         SudokuGenerator.generateFullBoard(solution);
 
-        if (boardPanel != null) {
-            remove(boardPanel);
-        }
-        if (buttonPanel != null) {
-            remove(buttonPanel);
-        }
-
-        // Create Sudoku board
-        boardPanel = new JPanel(new GridLayout(GRID_SIZE, GRID_SIZE));
+        JPanel boardPanel = new JPanel(new GridLayout(GRID_SIZE, GRID_SIZE));
         boardPanel.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
-
         Font font = new Font("Monospaced", Font.BOLD, 20);
 
         for (int row = 0; row < GRID_SIZE; row++) {
@@ -99,13 +113,16 @@ public class Gui extends JFrame {
                                 e.consume();
                                 return;
                             }
+
                             int inputNum = Character.getNumericValue(ch);
+
                             if (inputNum == solution[r][c]) {
                                 cell.setText(String.valueOf(inputNum));
                                 cell.setForeground(Color.BLUE);
                                 cell.setEditable(false);
                                 cell.setBackground(Color.WHITE);
                                 selectedCell = null;
+                                checkCompletion();
                             } else {
                                 lives--;
                                 livesLabel.setText("Lives: " + lives);
@@ -114,14 +131,14 @@ public class Gui extends JFrame {
 
                                 if (lives == 0) {
                                     int option = JOptionPane.showOptionDialog(
-                                            Gui.this,
-                                            "Game Over! You lost all your lives.\nWould you like to start a new game or exit?",
-                                            "Game Over",
-                                            JOptionPane.YES_NO_OPTION,
-                                            JOptionPane.ERROR_MESSAGE,
-                                            null,
-                                            new String[]{"New Game", "Exit"},
-                                            "New Game"
+                                        Gui.this,
+                                        "Game Over! You lost all your lives.\nWould you like to start a new game or exit?",
+                                        "Game Over",
+                                        JOptionPane.YES_NO_OPTION,
+                                        JOptionPane.ERROR_MESSAGE,
+                                        null,
+                                        new String[]{"New Game", "Exit"},
+                                        "New Game"
                                     );
 
                                     if (option == JOptionPane.YES_OPTION) {
@@ -141,7 +158,6 @@ public class Gui extends JFrame {
                 int left = (col % SUBGRID_SIZE == 0) ? 4 : 1;
                 int bottom = (row == GRID_SIZE - 1) ? 4 : 1;
                 int right = (col == GRID_SIZE - 1) ? 4 : 1;
-
                 cell.setBorder(BorderFactory.createMatteBorder(top, left, bottom, right, Color.BLACK));
 
                 cells[row][col] = cell;
@@ -149,8 +165,7 @@ public class Gui extends JFrame {
             }
         }
 
-        // Number button panel
-        buttonPanel = new JPanel(new GridLayout(5, 2, 5, 5));
+        JPanel buttonPanel = new JPanel(new GridLayout(5, 2, 5, 5));
         for (int i = 1; i <= 9; i++) {
             int number = i;
             JButton btn = new JButton(String.valueOf(i));
@@ -164,10 +179,6 @@ public class Gui extends JFrame {
         clearBtn.addActionListener(e -> clearSelectedCell());
         buttonPanel.add(clearBtn);
 
-        livesLabel = new JLabel("Lives: " + lives);
-        livesLabel.setFont(new Font("Arial", Font.BOLD, 16));
-        livesLabel.setHorizontalAlignment(SwingConstants.CENTER);
-
         JPanel rightPanel = new JPanel(new BorderLayout(10, 10));
         rightPanel.add(buttonPanel, BorderLayout.CENTER);
         rightPanel.add(livesLabel, BorderLayout.SOUTH);
@@ -175,9 +186,6 @@ public class Gui extends JFrame {
 
         add(boardPanel, BorderLayout.CENTER);
         add(rightPanel, BorderLayout.EAST);
-
-        // Hide difficulty buttons
-        difficultyPanel.setVisible(false);
 
         revalidate();
         repaint();
@@ -204,6 +212,7 @@ public class Gui extends JFrame {
             selectedCell.setEditable(false);
             selectedCell.setBackground(Color.WHITE);
             selectedCell = null;
+            checkCompletion();
         } else {
             lives--;
             livesLabel.setText("Lives: " + lives);
@@ -212,18 +221,18 @@ public class Gui extends JFrame {
 
             if (lives == 0) {
                 int option = JOptionPane.showOptionDialog(
-                        this,
-                        "Game Over! You lost all your lives.\nWould you like to start a new game or exit?",
-                        "Game Over",
-                        JOptionPane.YES_NO_OPTION,
-                        JOptionPane.ERROR_MESSAGE,
-                        null,
-                        new String[]{"New Game", "Exit"},
-                        "New Game"
+                    this,
+                    "Game Over! You lost all your lives.\nWould you like to start a new game or exit?",
+                    "Game Over",
+                    JOptionPane.YES_NO_OPTION,
+                    JOptionPane.ERROR_MESSAGE,
+                    null,
+                    new String[]{"New Game", "Exit"},
+                    "New Game"
                 );
 
                 if (option == JOptionPane.YES_OPTION) {
-                    this.dispose();
+                    dispose();
                     SwingUtilities.invokeLater(Gui::new);
                 } else {
                     System.exit(0);
@@ -257,7 +266,6 @@ public class Gui extends JFrame {
         for (int i = 0; i < GRID_SIZE; i++) {
             cells[row][i].setBackground(Color.LIGHT_GRAY);
         }
-
         int startRow = (row / SUBGRID_SIZE) * SUBGRID_SIZE;
         int startCol = (col / SUBGRID_SIZE) * SUBGRID_SIZE;
         for (int r = startRow; r < startRow + SUBGRID_SIZE; r++) {
@@ -265,8 +273,36 @@ public class Gui extends JFrame {
                 cells[r][c].setBackground(Color.LIGHT_GRAY);
             }
         }
-
         cells[row][col].setBackground(Color.LIGHT_GRAY);
+    }
+
+    private void checkCompletion() {
+        for (int r = 0; r < GRID_SIZE; r++) {
+            for (int c = 0; c < GRID_SIZE; c++) {
+                String text = cells[r][c].getText();
+                if (text.isEmpty() || Integer.parseInt(text) != solution[r][c]) {
+                    return;
+                }
+            }
+        }
+
+        int option = JOptionPane.showOptionDialog(
+            this,
+            "Congratulations! You solved the Sudoku!\nDo you want to play again?",
+            "Victory",
+            JOptionPane.YES_NO_OPTION,
+            JOptionPane.INFORMATION_MESSAGE,
+            null,
+            new String[]{"Play Again", "Exit"},
+            "Play Again"
+        );
+
+        if (option == JOptionPane.YES_OPTION) {
+            dispose();
+            SwingUtilities.invokeLater(Gui::new);
+        } else {
+            System.exit(0);
+        }
     }
 
     public static void main(String[] args) {
